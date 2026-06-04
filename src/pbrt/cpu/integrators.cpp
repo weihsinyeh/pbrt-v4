@@ -158,6 +158,10 @@ void ImageTileIntegrator::Render() {
                        });
     }
 
+    RGBFilm *rgbFilm = camera.GetFilm().CastOrNullptr<RGBFilm>();
+    int minSamples = 32;
+    Float noiseThreshold = 0.001f;
+
     // Render image in waves
     while (waveStart < spp) {
         // Render current wave's image tiles in parallel
@@ -169,6 +173,13 @@ void ImageTileIntegrator::Render() {
                      tileBounds.pMin.x, tileBounds.pMin.y, tileBounds.pMax.x,
                      tileBounds.pMax.y, waveStart, waveEnd);
             for (Point2i pPixel : tileBounds) {
+                if (rgbFilm && waveStart >= minSamples) {
+                    Float variance = rgbFilm->GetPixelVariance(pPixel);
+                    if (variance < noiseThreshold) {
+                        print(variance)
+                        continue;
+                    }
+                }
                 StatsReportPixelStart(pPixel);
                 threadPixel = pPixel;
                 // Render samples in pixel _pPixel_
@@ -221,6 +232,31 @@ void ImageTileIntegrator::Render() {
         fclose(mseOutFile);
     DisconnectFromDisplayServer();
     LOG_VERBOSE("Rendering finished");
+
+    if (rgbFilm) {
+        Float totalVariance = 0.f;
+        Float pixelCount = 0;
+
+        Bounds2i pBounds = rgbFilm->PixelBounds();
+        for (Point2i p : pBounds) {
+            totalVariance += rgbFilm->GetPixelVariance(p);
+            pixelCount++;
+        }
+
+        Float avgVariance = totalVariance / pixelCount;
+
+        Float timeSeconds = progress.ElapsedSeconds();
+        if (timeSeconds <= 0.f) timeSeconds = 0.0001f;
+
+        // Monte Carlo Efficiency
+        Float efficiency = 1.0f / (avgVariance * timeSeconds);
+        printf(" Adaptive Sampling Statistics\n");
+        printf("-------------------------------------------------\n");
+        printf(" Average Variance : %.6f\n", avgVariance);
+        printf(" Render Time      : %.3f seconds\n", timeSeconds);
+        printf(" MC Efficiency    : %.6f\n", efficiency);
+        printf("=================================================\n");
+    }
 }
 
 // RayIntegrator Method Definitions

@@ -296,6 +296,9 @@ class RGBFilm : public FilmBase {
     }
 
     PBRT_CPU_GPU void ResetPixel(Point2i p) { memset(&pixels[p], 0, sizeof(Pixel)); }
+    PBRT_CPU_GPU Float GetPixelVariance(Point2i p) const {
+        return pixels[p].variance.Variance();
+    }
 
   private:
     // RGBFilm::Pixel Definition
@@ -304,6 +307,7 @@ class RGBFilm : public FilmBase {
         double rgbSum[3] = {0., 0., 0.};
         double weightSum = 0.;
         AtomicDouble rgbSplat[3];
+        VarianceEstimator<Float> variance;
     };
 
     // RGBFilm Private Members
@@ -430,6 +434,8 @@ class SpectralFilm : public FilmBase {
             pixel.rgbSum[c] += weight * rgb[c];
         pixel.rgbWeightSum += weight;
 
+        Float lum = 0.2126f * rgb[0] + 0.7152f * rgb[1] + 0.0722f * rgb[2];
+        pixel.variance.Add(lum);
         // Spectral processing starts here.
         // Optionally clamp spectral value. (TODO: for spectral should we
         // just clamp channels individually?)
@@ -514,6 +520,7 @@ class SpectralFilm : public FilmBase {
         // The following will all have nBuckets entries.
         double *bucketSums, *weightSums;
         AtomicDouble *bucketSplats;
+        VarianceEstimator<Float> variance;
     };
 
     // SpectralFilm Private Members
