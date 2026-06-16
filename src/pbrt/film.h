@@ -252,6 +252,8 @@ class RGBFilm : public FilmBase {
         for (int c = 0; c < 3; ++c)
             pixel.rgbSum[c] += weight * rgb[c];
         pixel.weightSum += weight;
+        Float lum = 0.2126f * rgb[0] + 0.7152f * rgb[1] + 0.0722f * rgb[2];
+        pixel.variance.Add(lum);
     }
 
     PBRT_CPU_GPU
@@ -434,8 +436,6 @@ class SpectralFilm : public FilmBase {
             pixel.rgbSum[c] += weight * rgb[c];
         pixel.rgbWeightSum += weight;
 
-        Float lum = 0.2126f * rgb[0] + 0.7152f * rgb[1] + 0.0722f * rgb[2];
-        pixel.variance.Add(lum);
         // Spectral processing starts here.
         // Optionally clamp spectral value. (TODO: for spectral should we
         // just clamp channels individually?)
@@ -520,7 +520,6 @@ class SpectralFilm : public FilmBase {
         // The following will all have nBuckets entries.
         double *bucketSums, *weightSums;
         AtomicDouble *bucketSplats;
-        VarianceEstimator<Float> variance;
     };
 
     // SpectralFilm Private Members
