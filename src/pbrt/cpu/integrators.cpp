@@ -39,7 +39,7 @@
 #include <pbrt/util/spectrum.h>
 #include <pbrt/util/stats.h>
 #include <pbrt/util/string.h>
-
+#include <iostream>
 #include <algorithm>
 
 namespace pbrt {
@@ -176,7 +176,7 @@ void ImageTileIntegrator::Render() {
                 if (rgbFilm && waveStart >= minSamples) {
                     Float variance = rgbFilm->GetPixelVariance(pPixel);
                     if (variance < noiseThreshold) {
-                        print(variance)
+                        // std::cout << "Pixel " << pPixel << " has low variance: " << variance << std::endl;
                         continue;
                     }
                 }
