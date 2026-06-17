@@ -179,6 +179,7 @@ void ImageTileIntegrator::Render() {
     RGBFilm *rgbFilm = camera.GetFilm().CastOrNullptr<RGBFilm>();
     int minSamples = 32;
     Float noiseThreshold = 0.001f;
+    Float betaErrorRate = 0.1f;
 
     // Render image in waves
     while (waveStart < spp) {
@@ -192,9 +193,14 @@ void ImageTileIntegrator::Render() {
                      tileBounds.pMax.y, waveStart, waveEnd);
             for (Point2i pPixel : tileBounds) {
                 if (rgbFilm && waveStart >= minSamples) {
-                    Float variance = rgbFilm->GetPixelVariance(pPixel);
-                    if (variance < noiseThreshold) {
-                        // std::cout << "Pixel " << pPixel << " has low variance: " << variance << std::endl;
+                    Float absoluteVariance = rgbFilm->GetPixelVariance(pPixel);
+                    RGB rgb = rgbFilm->GetPixelRGB(pPixel);
+                    Float lum = 0.2126f * rgb[0] + 0.7152f * rgb[1] + 0.0722f * rgb[2];
+                    Float relativeVariance = absoluteVariance / (lum * lum + 1e-4f);
+                    Float chi2Value = GetChiSquaredCriticalValue(waveStart, betaErrorRate);
+                    Float statisticalError = relativeVariance / chi2Value;\
+                    if (statisticalError < noiseThreshold) {
+                        // std::cout << "Pixel " << pPixel << " has low variance: " << absoluteVariance << std::endl;
                         continue;
                     }
                 }
