@@ -62,6 +62,24 @@ std::string RandomWalkIntegrator::ToString() const {
 // Integrator Method Definitions
 Integrator::~Integrator() {}
 
+inline Float GetChiSquaredCriticalValue(int N, Float beta = 0.1f) {
+    int k = N - 1; // degrees of freedom
+    if (k <= 0) return 0.0001f;
+
+    Float Z_beta = -1.2815f;
+    if (beta <= 0.05f) Z_beta = -1.6449f;
+    if (beta <= 0.01f) Z_beta = -2.3263f;
+
+    // Wilson-Hilferty
+    Float term1 = 1.0f - (2.0f / (9.0f * k));
+    Float term2 = Z_beta * std::sqrt(2.0f / (9.0f * k));
+    Float approx = term1 + term2;
+
+    approx = std::max(approx, 0.01f);
+
+    return k * (approx * approx * approx);
+}
+
 // ImageTileIntegrator Method Definitions
 void ImageTileIntegrator::Render() {
     // Handle debugStart, if set
