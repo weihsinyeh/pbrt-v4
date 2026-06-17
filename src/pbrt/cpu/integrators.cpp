@@ -246,15 +246,11 @@ void ImageTileIntegrator::Render() {
         Float avgVariance = totalVariance / pixelCount;
 
         Float timeSeconds = progress.ElapsedSeconds();
-        if (timeSeconds <= 0.f) timeSeconds = 0.0001f;
 
-        // Monte Carlo Efficiency
-        Float efficiency = 1.0f / (avgVariance * timeSeconds);
         printf(" Adaptive Sampling Statistics\n");
         printf("-------------------------------------------------\n");
         printf(" Average Variance : %.6f\n", avgVariance);
         printf(" Render Time      : %.3f seconds\n", timeSeconds);
-        printf(" MC Efficiency    : %.6f\n", efficiency);
         printf("=================================================\n");
     }
 }
