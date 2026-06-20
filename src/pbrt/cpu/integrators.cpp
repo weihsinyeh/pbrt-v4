@@ -177,10 +177,11 @@ void ImageTileIntegrator::Render() {
     }
 
     RGBFilm *rgbFilm = camera.GetFilm().CastOrNullptr<RGBFilm>();
-    int minSamples = 32;
+    int minSamples = 1024;
     Float noiseThreshold = 0.001f;
     Float betaErrorRate = 0.1f;
-
+    Point2i filmResolution = camera.GetFilm().FullResolution();
+    std::vector<uint8_t> convergedMap(filmResolution.x * filmResolution.y, 0);
     // Render image in waves
     while (waveStart < spp) {
         // Render current wave's image tiles in parallel
@@ -192,16 +193,23 @@ void ImageTileIntegrator::Render() {
                      tileBounds.pMin.x, tileBounds.pMin.y, tileBounds.pMax.x,
                      tileBounds.pMax.y, waveStart, waveEnd);
             for (Point2i pPixel : tileBounds) {
+                int pixelIndex = pPixel.y * filmResolution.x + pPixel.x;
+                if (convergedMap[pixelIndex] == 1)
+                    continue;
                 if (rgbFilm && waveStart >= minSamples) {
-                    Float absoluteVariance = rgbFilm->GetPixelVariance(pPixel);
+                    Float absVariance = rgbFilm->GetPixelVariance(pPixel);
                     RGB rgb = rgbFilm->GetPixelRGB(pPixel);
                     Float lum = 0.2126f * rgb[0] + 0.7152f * rgb[1] + 0.0722f * rgb[2];
-                    Float relativeVariance = absoluteVariance / (lum * lum + 1e-4f);
-                    Float chi2Value = GetChiSquaredCriticalValue(waveStart, betaErrorRate);
-                    Float statisticalError = relativeVariance / chi2Value;\
-                    if (statisticalError < noiseThreshold) {
-                        // std::cout << "Pixel " << pPixel << " has low variance: " << absoluteVariance << std::endl;
-                        continue;
+                    Float mappedLum = std::min(lum, 1.0f);
+                    if (mappedLum > 1e-3f && absVariance > 0.0f) {
+                        Float relativeVariance = absVariance / (mappedLum * mappedLum + 1e-4f);
+                        Float chi2Value = GetChiSquaredCriticalValue(waveStart, betaErrorRate);
+                        Float statisticalError = relativeVariance / chi2Value;
+                        if (statisticalError < noiseThreshold) {
+                            convergedMap[pixelIndex] = 1;
+                            std::cout << "Pixel " << pPixel << " has low variance: " << absVariance << std::endl;
+                            continue;
+                        }
                     }
                 }
                 StatsReportPixelStart(pPixel);
