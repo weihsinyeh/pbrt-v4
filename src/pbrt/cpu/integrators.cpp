@@ -257,26 +257,12 @@ void ImageTileIntegrator::Render() {
     DisconnectFromDisplayServer();
     LOG_VERBOSE("Rendering finished");
 
-    if (rgbFilm) {
-        Float totalVariance = 0.f;
-        Float pixelCount = 0;
+    Float timeSeconds = progress.ElapsedSeconds();
+    printf(" Adaptive Sampling Statistics\n");
+    printf("-------------------------------------------------\n");
+    printf(" Render Time      : %.3f seconds\n", timeSeconds);
+    printf("=================================================\n");
 
-        Bounds2i pBounds = rgbFilm->PixelBounds();
-        for (Point2i p : pBounds) {
-            totalVariance += rgbFilm->GetPixelVariance(p);
-            pixelCount++;
-        }
-
-        Float avgVariance = totalVariance / pixelCount;
-
-        Float timeSeconds = progress.ElapsedSeconds();
-
-        printf(" Adaptive Sampling Statistics\n");
-        printf("-------------------------------------------------\n");
-        printf(" Average Variance : %.6f\n", avgVariance);
-        printf(" Render Time      : %.3f seconds\n", timeSeconds);
-        printf("=================================================\n");
-    }
 }
 
 // RayIntegrator Method Definitions
