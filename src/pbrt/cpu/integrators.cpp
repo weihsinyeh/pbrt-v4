@@ -207,7 +207,7 @@ void ImageTileIntegrator::Render() {
                         Float statisticalError = relativeVariance / chi2Value;
                         if (statisticalError < noiseThreshold) {
                             convergedMap[pixelIndex] = 1;
-                            std::cout << "Pixel " << pPixel << " has low variance: " << absVariance << std::endl;
+                            // std::cout << "Pixel " << pPixel << " has low variance: " << absVariance << std::endl;
                             continue;
                         }
                     }
